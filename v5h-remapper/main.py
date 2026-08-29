@@ -80,7 +80,7 @@ class V5HRemapper:
             print("Cihaz bağlantısı koptu.")
             sys.exit(1)
 
-        x_axis, y_axis, *_, main_buttons, extra_buttons, mode = input_data 
+        x_axis, y_axis, *_, main_buttons, extra_buttons, _ = input_data 
 
         ## X Axis Routing
         x_axis = normalize_axis(x_axis, X_AXIS_MAX)
