@@ -5,6 +5,7 @@ from math import floor
 import hid
 import pyvjoy
 import pyvjoy.exceptions as pyvjoyexc
+import bitparser
 
 
 ## :: Config ::
@@ -73,14 +74,16 @@ class V5HRemapper:
             print("Sanal cihaz kullanılabilir değil.")
             sys.exit(1)
 
+        self.bitparser = bitparser.BitParser([8, 8, 8, 8, 8, 4, 12, 8])
+
     def step(self):
         try:
-            input_data = bytearray(self.v5h.read(DATA_LENGTH))
+            input_data = self.v5h.read(DATA_LENGTH)
         except IOError:
             print("Cihaz bağlantısı koptu.")
             sys.exit(1)
 
-        x_axis, y_axis, *_, main_buttons, extra_buttons, _ = input_data 
+        x_axis, y_axis, *_, dpad, buttons, _ = self.bitparser.parse(input_data)
 
         ## X Axis Routing
         x_axis = normalize_axis(x_axis, X_AXIS_MAX)
@@ -126,19 +129,14 @@ class V5HRemapper:
         ## Y Axis Routing End.
 
         ## Main Buttons and DPad Routing
-        dpad = main_buttons & 0x0F
-        buttons = (main_buttons >> 4) & 0x0F
-
         if 0 <= dpad <= 7:
             self.vdevice.set_cont_pov(1, dpad * 4500)
         else:
             self.vdevice.set_cont_pov(1, -1)
 
-        # Buttons
-        _buttons = buttons | (extra_buttons << 4)
         for i in range(12):
             btn_index = 1 << i
-            if _buttons & btn_index:
+            if buttons & btn_index:
                 self.vdevice.set_button(i + 1, 1)
             else:
                 self.vdevice.set_button(i + 1, 0)
